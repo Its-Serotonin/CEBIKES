@@ -1,0 +1,10 @@
+{
+  "item.cebikes.mach_bike": "Mach Bike",
+  "item.cebikes.acro_bike": "Acro Bike",
+  "entity.cebikes.mach_bike": "Mach Bike",
+  "entity.cebikes.acro_bike": "Acro Bike",
+  "key.cebikes.brake": "Brake (Bike)",
+  "key.cebikes.headlight": "Headlight (Bike)",
+  "block.cebikes.bike_rack": "Bike Rack",
+  "category.cebikes": "CE Bikes"
+}

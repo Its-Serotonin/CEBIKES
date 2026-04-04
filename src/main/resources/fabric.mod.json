@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "cebikes",
+  "version": "${version}",
+  "name": "CE Bikes",
+  "description": "",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/cebikes/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-datagen": [
+      "com.serotonin.cebikes.client.CebikesDataGenerator"
+    ],
+    "client": [
+      "com.serotonin.cebikes.client.CebikesClient"
+    ],
+    "main": [
+      "com.serotonin.cebikes.Cebikes"
+    ]
+  },
+  "mixins": [
+    "cebikes.mixins.json",
+    {
+      "config": "cebikes.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-language-kotlin": ">=${kotlin_loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}",
+    "geckolib": "*"
+  }
+}

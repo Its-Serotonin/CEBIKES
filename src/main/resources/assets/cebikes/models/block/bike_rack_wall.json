@@ -1,0 +1,46 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "all": "cebikes:block/bike_rack",
+    "particle": "cebikes:block/bike_rack"
+  },
+  "elements": [
+    {
+      "comment": "backplate flush against wall",
+      "from": [1, 3, 14],
+      "to": [15, 13, 16],
+      "faces": {
+        "up":    { "texture": "#all", "uv": [1, 14, 15, 16] },
+        "down":  { "texture": "#all", "uv": [1, 14, 15, 16] },
+        "north": { "texture": "#all", "uv": [1, 3, 15, 13] },
+        "south": { "texture": "#all", "uv": [1, 3, 15, 13] },
+        "east":  { "texture": "#all", "uv": [14, 3, 16, 13] },
+        "west":  { "texture": "#all", "uv": [14, 3, 16, 13] }
+      }
+    },
+    {
+      "comment": "left hook",
+      "from": [2, 5, 12],
+      "to": [3, 7, 14],
+      "faces": {
+        "up":    { "texture": "#all", "uv": [2, 12, 3, 14] },
+        "down":  { "texture": "#all", "uv": [2, 12, 3, 14] },
+        "north": { "texture": "#all", "uv": [2, 9, 3, 11] },
+        "west":  { "texture": "#all", "uv": [12, 9, 14, 11] },
+        "east":  { "texture": "#all", "uv": [12, 9, 14, 11] }
+      }
+    },
+    {
+      "comment": "right hook",
+      "from": [13, 5, 12],
+      "to": [14, 7, 14],
+      "faces": {
+        "up":    { "texture": "#all", "uv": [13, 12, 14, 14] },
+        "down":  { "texture": "#all", "uv": [13, 12, 14, 14] },
+        "north": { "texture": "#all", "uv": [13, 9, 14, 11] },
+        "west":  { "texture": "#all", "uv": [12, 9, 14, 11] },
+        "east":  { "texture": "#all", "uv": [12, 9, 14, 11] }
+      }
+    }
+  ]
+}
