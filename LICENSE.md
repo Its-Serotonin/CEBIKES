@@ -152,4 +152,4 @@ a. Severability.
 
 ### **Version History:**
 
-1. Initial release **V1.0** (***Version 1.0***): MM/DD/YYYY
+1. Initial release **V1.0** (***Version 1.0***): 08/27/2026
