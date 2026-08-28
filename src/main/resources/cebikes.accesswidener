@@ -1,0 +1,6 @@
+accessWidener v2 named
+
+# Make KeyBinding.pressed and timesPressed settable so we can manually
+# sync conflicting bindings (e.g. sprint) from raw GLFW state when on a bike.
+accessible field net/minecraft/client/option/KeyBinding pressed Z
+accessible field net/minecraft/client/option/KeyBinding timesPressed I

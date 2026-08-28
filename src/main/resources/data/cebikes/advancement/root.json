@@ -1,0 +1,17 @@
+{
+  "display": {
+    "icon": {
+      "id": "cebikes:mach_bike"
+    },
+    "title": {"translate": "advancement.cebikes.root.title"},
+    "description": {"translate": "advancement.cebikes.root.description"},
+    "background": "minecraft:textures/block/iron_block.png",
+    "show_toast": false,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "tick": {
+      "trigger": "minecraft:tick"
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "display": {
+    "icon": {
+      "id": "cebikes:multibrush"
+    },
+    "title": {"translate": "advancement.cebikes.multibrush.title"},
+    "description": {"translate": "advancement.cebikes.multibrush.description"},
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "parent": "cebikes:root",
+  "criteria": {
+    "crafted_multibrush": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {"items": "cebikes:multibrush"}
+        ]
+      }
+    }
+  },
+  "rewards": {
+    "experience": 750,
+    "loot": ["cebikes:advancement/multibrush_reward"]
+  }
+}

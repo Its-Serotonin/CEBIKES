@@ -1,0 +1,27 @@
+{
+  "display": {
+    "icon": {
+      "id": "cebikes:acro_bike"
+    },
+    "title": {"translate": "advancement.cebikes.acro_bike.title"},
+    "description": {"translate": "advancement.cebikes.acro_bike.description"},
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "parent": "cebikes:root",
+  "criteria": {
+    "crafted_acro_bike": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {"items": "cebikes:acro_bike"}
+        ]
+      }
+    }
+  },
+  "rewards": {
+    "experience": 300
+  }
+}

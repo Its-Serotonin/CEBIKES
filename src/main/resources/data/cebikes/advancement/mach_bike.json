@@ -1,0 +1,27 @@
+{
+  "display": {
+    "icon": {
+      "id": "cebikes:mach_bike"
+    },
+    "title": {"translate": "advancement.cebikes.mach_bike.title"},
+    "description": {"translate": "advancement.cebikes.mach_bike.description"},
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "parent": "cebikes:root",
+  "criteria": {
+    "crafted_mach_bike": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {"items": "cebikes:mach_bike"}
+        ]
+      }
+    }
+  },
+  "rewards": {
+    "experience": 300
+  }
+}
