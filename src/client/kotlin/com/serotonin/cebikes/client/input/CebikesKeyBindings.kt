@@ -27,5 +27,14 @@ object CebikesKeyBindings {
         )
     )
 
+    val BELL: KeyBinding = KeyBindingHelper.registerKeyBinding(
+        KeyBinding(
+            "key.cebikes.bell",
+            InputUtil.Type.KEYSYM,
+            GLFW.GLFW_KEY_B,
+            CATEGORY
+        )
+    )
+
     fun register() { /* triggers static initialisation */ }
 }

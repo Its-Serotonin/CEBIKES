@@ -1,6 +1,7 @@
 package com.serotonin.cebikes.registry
 
 import com.serotonin.cebikes.entity.AcroBikeEntity
+import com.serotonin.cebikes.entity.HeadlightAnchorEntity
 import com.serotonin.cebikes.entity.MachBikeEntity
 import net.minecraft.entity.EntityType
 import net.minecraft.entity.SpawnGroup
@@ -14,7 +15,7 @@ object CebikesEntities {
         Registries.ENTITY_TYPE,
         Identifier.of("cebikes", "mach_bike"),
         EntityType.Builder.create(::MachBikeEntity, SpawnGroup.MISC)
-            .dimensions(1.4f, 0.9f)
+            .dimensions(1.8f, 2.0f)
             .build()
     )
 
@@ -22,7 +23,16 @@ object CebikesEntities {
         Registries.ENTITY_TYPE,
         Identifier.of("cebikes", "acro_bike"),
         EntityType.Builder.create(::AcroBikeEntity, SpawnGroup.MISC)
-            .dimensions(1.4f, 0.9f)
+            .dimensions(1.8f, 2.0f)
+            .build()
+    )
+
+    val HEADLIGHT_ANCHOR: EntityType<HeadlightAnchorEntity> = Registry.register(
+        Registries.ENTITY_TYPE,
+        Identifier.of("cebikes", "headlight_anchor"),
+        EntityType.Builder.create(::HeadlightAnchorEntity, SpawnGroup.MISC)
+            .dimensions(0.0f, 0.0f)   // no hitbox
+            .disableSummon()
             .build()
     )
 

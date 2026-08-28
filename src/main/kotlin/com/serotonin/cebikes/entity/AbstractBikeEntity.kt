@@ -1,5 +1,11 @@
 package com.serotonin.cebikes.entity
 
+import com.serotonin.cebikes.network.OpenBikeCustomizerPayload
+import com.serotonin.cebikes.particle.BrakeSmokeParticleEffect
+import com.serotonin.cebikes.registry.CebikesEntities
+import com.serotonin.cebikes.registry.CebikesItems
+import com.serotonin.cebikes.registry.SoundRegistry
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import net.minecraft.entity.Entity
 import net.minecraft.entity.EntityType
 import net.minecraft.entity.ItemEntity
@@ -12,13 +18,20 @@ import net.minecraft.entity.data.TrackedDataHandlerRegistry
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.item.DyeItem
 import net.minecraft.item.ItemStack
+import net.minecraft.item.ShearsItem
 import net.minecraft.nbt.NbtCompound
+import net.minecraft.particle.DustColorTransitionParticleEffect
+import net.minecraft.particle.DustParticleEffect
+import net.minecraft.particle.ParticleEffect
 import net.minecraft.particle.ParticleTypes
+import org.joml.Vector3f
+import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.server.world.ServerWorld
 import net.minecraft.sound.SoundEvents
 import net.minecraft.util.ActionResult
 import net.minecraft.util.DyeColor
 import net.minecraft.util.Hand
+import net.minecraft.util.math.Box
 import net.minecraft.util.math.MathHelper
 import net.minecraft.util.math.Vec3d
 import net.minecraft.world.World
@@ -30,53 +43,36 @@ import kotlin.math.*
 
 abstract class AbstractBikeEntity(type: EntityType<*>, world: World) : Entity(type, world), GeoEntity {
 
-    // ── GeckoLib ──────────────────────────────────────────────────────────
     private val geoCache: AnimatableInstanceCache = GeckoLibUtil.createInstanceCache(this)
 
     override fun getAnimatableInstanceCache(): AnimatableInstanceCache = geoCache
 
     override fun registerControllers(controllers: AnimatableManager.ControllerRegistrar) {
-        // No pre-baked animations yet; wheel/handlebar motion is driven procedurally in the renderer.
+        // No pre-baked animations; wheel/handlebar motion is driven procedurally in the renderer.
     }
 
-    // ── Bike characteristics ───────────────────────────────────────────────
     abstract val maxForwardSpeed: Double
     abstract val acceleration: Double
-    /** Multiplied against currentSpeed each tick with no throttle input. */
     abstract val naturalDeceleration: Double
-    /** Base turn rate in degrees per tick at any speed. */
     abstract val baseTurnRate: Float
-    /** Maximum turn rate during a full drift (after holding steer long enough). */
     abstract val maxDriftTurnRate: Float
 
-    // ── Server-side input ──────────────────────────────────────────────────
     var pressingForward  = false
     var pressingBackward = false
     var pressingSteerLeft  = false
     var pressingSteerRight = false
-    var pressingJump     = false
     var pressingBrake    = false
+    var smoothedSteerRad = 0f
 
-    // ── Physics state ──────────────────────────────────────────────────────
     private var wasBraking    = false
     var currentSpeed = 0.0
         private set
 
-    // ── Steering / drift tracking ─────────────────────────────────────────
-    /** -1 = left, 0 = none, 1 = right */
     private var steerDirection = 0
-    /**
-     * How many ticks we've been continuously steering in [steerDirection].
-     * Drift bonuses kick in after [DRIFT_THRESHOLD] ticks.
-     */
-    private var steerDuration = 0
-
+    private var steerDuration  = 0
     private var bikeYawInitialized = false
-
-    /** Remembers last non-zero steer direction for brake skid. */
     private var lastNonZeroSteerDirection = 0
 
-    // ── Client-side interpolation ─────────────────────────────────────────
     private var lerpSteps = 0
     private var lerpX = 0.0
     private var lerpY = 0.0
@@ -84,12 +80,12 @@ abstract class AbstractBikeEntity(type: EntityType<*>, world: World) : Entity(ty
     private var lerpYaw = 0.0
 
     companion object {
-        private const val DRIFT_THRESHOLD  = 40   // ticks before drift bonuses appear
-        private const val DRIFT_RAMP_TICKS = 30   // ticks over which drift reaches max
+        private const val DRIFT_THRESHOLD  = 25
+        private const val DRIFT_RAMP_TICKS = 30
 
-        val COLOR_KEY: TrackedData<Int> = DataTracker.registerData(
+        val BONE_COLORS: TrackedData<NbtCompound> = DataTracker.registerData(
             AbstractBikeEntity::class.java,
-            TrackedDataHandlerRegistry.INTEGER
+            TrackedDataHandlerRegistry.NBT_COMPOUND
         )
         val STEER_ANGLE: TrackedData<Float> = DataTracker.registerData(
             AbstractBikeEntity::class.java,
@@ -99,9 +95,20 @@ abstract class AbstractBikeEntity(type: EntityType<*>, world: World) : Entity(ty
             AbstractBikeEntity::class.java,
             TrackedDataHandlerRegistry.BOOLEAN
         )
-        const val DEFAULT_COLOR = 0xFFFFFF
+        val DRIFT_PROGRESS: TrackedData<Float> = DataTracker.registerData(
+            AbstractBikeEntity::class.java,
+            TrackedDataHandlerRegistry.FLOAT
+        )
+        val BELL_TYPE: TrackedData<Int> = DataTracker.registerData(
+            AbstractBikeEntity::class.java,
+            TrackedDataHandlerRegistry.INTEGER
+        )
+        val HEADLIGHT_ANCHOR_ID: TrackedData<Int> = DataTracker.registerData(
+            AbstractBikeEntity::class.java,
+            TrackedDataHandlerRegistry.INTEGER
+        )
 
-        private val DYE_TO_RGB = mapOf(
+        val DYE_TO_RGB = mapOf(
             DyeColor.WHITE      to 0xF9FFFE,
             DyeColor.ORANGE     to 0xF9801D,
             DyeColor.MAGENTA    to 0xC74EBD,
@@ -121,71 +128,188 @@ abstract class AbstractBikeEntity(type: EntityType<*>, world: World) : Entity(ty
         )
     }
 
-    /** Client-side accumulated wheel rotation in radians (not synced). */
     var wheelRotation = 0f
         private set
 
-    /** Visual handlebar angle in degrees, synced via DataTracker. */
+    var smoothedRollRad = 0f
+
+    var isGuiRendering: Boolean = false
+
     val steerAngle: Float
         get() = dataTracker.get(STEER_ANGLE)
 
-    /** Whether the headlight is currently on. */
     val headlightOn: Boolean
         get() = dataTracker.get(HEADLIGHT_ON)
 
     fun toggleHeadlight() {
-        dataTracker.set(HEADLIGHT_ON, !headlightOn)
+        val next = !headlightOn
+        dataTracker.set(HEADLIGHT_ON, next)
+        if (next) {
+            playSound(SoundRegistry.HEADLIGHT_ON, 0.5f, 1.0f)
+        } else {
+            playSound(SoundRegistry.HEADLIGHT_OFF, 0.5f, 1.0f)
+        }
     }
 
-    // ── DataTracker / NBT ─────────────────────────────────────────────────
+    fun getBellType(): Int = dataTracker.get(BELL_TYPE)
+
+    fun setBellType(index: Int) {
+        dataTracker.set(BELL_TYPE, index.coerceIn(0, SoundRegistry.BELL_COUNT - 1))
+    }
+
+    open val defaultColor: Int = 0xFFFFFF
+
+    fun getBoneColors(): NbtCompound = dataTracker.get(BONE_COLORS)
+
+    fun getBoneColor(boneName: String): Int {
+        val nbt = dataTracker.get(BONE_COLORS)
+        return if (nbt.contains(boneName)) nbt.getInt(boneName) else 0xFFFFFF
+    }
+
+    fun setBoneColors(colors: NbtCompound) {
+        dataTracker.set(BONE_COLORS, colors.copy())
+    }
+
+    fun setBoneColor(boneName: String, rgb: Int) {
+        val colors = dataTracker.get(BONE_COLORS).copy()
+        colors.putInt(boneName, rgb)
+        dataTracker.set(BONE_COLORS, colors)
+    }
+
+    fun applyDefaultColors() {
+        val colors = NbtCompound()
+        colors.putInt("frame", defaultColor)
+        colors.putInt("headlight_mount", defaultColor)
+        dataTracker.set(BONE_COLORS, colors)
+    }
+
     override fun initDataTracker(builder: DataTracker.Builder) {
-        builder.add(COLOR_KEY, DEFAULT_COLOR)
+        builder.add(BONE_COLORS, NbtCompound())
         builder.add(STEER_ANGLE, 0f)
         builder.add(HEADLIGHT_ON, false)
+        builder.add(DRIFT_PROGRESS, 0f)
+        builder.add(BELL_TYPE, 0)
+        builder.add(HEADLIGHT_ANCHOR_ID, -1)
     }
 
     override fun readCustomDataFromNbt(nbt: NbtCompound) {
-        val stored = nbt.getInt("BikeColor")
-        dataTracker.set(COLOR_KEY, if (stored == 0) DEFAULT_COLOR else stored)
+        val boneColors = when {
+            nbt.contains("BoneColors") -> {
+                val saved = nbt.getCompound("BoneColors").copy()
+                if (!saved.contains("frame")) saved.putInt("frame", defaultColor)
+                if (!saved.contains("headlight_mount")) saved.putInt("headlight_mount", defaultColor)
+                saved
+            }
+            nbt.contains("BikeColor") -> {
+                val legacy = NbtCompound()
+                val c = nbt.getInt("BikeColor")
+                legacy.putInt("frame", c)
+                legacy.putInt("headlight_mount", c)
+                legacy
+            }
+            else -> {
+                val defaults = NbtCompound()
+                defaults.putInt("frame", defaultColor)
+                defaults.putInt("headlight_mount", defaultColor)
+                defaults
+            }
+        }
+        dataTracker.set(BONE_COLORS, boneColors)
         dataTracker.set(HEADLIGHT_ON, nbt.getBoolean("HeadlightOn"))
+        dataTracker.set(BELL_TYPE, nbt.getInt("BellType").coerceIn(0, SoundRegistry.BELL_COUNT - 1))
         currentSpeed = nbt.getDouble("CurrentSpeed")
         yaw          = nbt.getFloat("BikeYaw")
         headYaw      = yaw
     }
 
     override fun writeCustomDataToNbt(nbt: NbtCompound) {
-        nbt.putInt("BikeColor",    dataTracker.get(COLOR_KEY))
+        nbt.put("BoneColors", dataTracker.get(BONE_COLORS).copy())
         nbt.putBoolean("HeadlightOn", headlightOn)
+        nbt.putInt("BellType", dataTracker.get(BELL_TYPE))
         nbt.putDouble("CurrentSpeed", currentSpeed)
-        nbt.putFloat("BikeYaw",   yaw)
+        nbt.putFloat("BikeYaw", yaw)
     }
 
-    // ── Interactability ───────────────────────────────────────────────────
-    /** Allows the player to punch/attack to pick up the bike. */
+    private var headlightAnchor: HeadlightAnchorEntity? = null
+
+    private fun tickHeadlightAnchor() {
+        if (world.isClient) return
+        val sw = world as ServerWorld
+
+        if (headlightOn) {
+            if (headlightAnchor == null || headlightAnchor!!.isRemoved) {
+                val anchor = HeadlightAnchorEntity(CebikesEntities.HEADLIGHT_ANCHOR, world)
+                updateAnchorPosition(anchor)
+                sw.spawnEntity(anchor)
+                headlightAnchor = anchor
+                dataTracker.set(HEADLIGHT_ANCHOR_ID, anchor.id)
+            } else {
+                updateAnchorPosition(headlightAnchor!!)
+            }
+        } else {
+            headlightAnchor?.remove(Entity.RemovalReason.DISCARDED)
+            headlightAnchor = null
+            dataTracker.set(HEADLIGHT_ANCHOR_ID, -1)
+        }
+    }
+
+    private fun updateAnchorPosition(anchor: HeadlightAnchorEntity) {
+        val yawRad = yaw * (PI / 180.0)
+        val fwd = Vec3d(-sin(yawRad), 0.0, cos(yawRad))
+        anchor.setPosition(
+            x + fwd.x * HeadlightAnchorEntity.FORWARD_OFFSET.z,
+            y + HeadlightAnchorEntity.FORWARD_OFFSET.y,
+            z + fwd.z * HeadlightAnchorEntity.FORWARD_OFFSET.z
+        )
+    }
+
     override fun canHit() = !isRemoved
 
-    // ── Interaction ───────────────────────────────────────────────────────
     override fun interact(player: PlayerEntity, hand: Hand): ActionResult {
         val stack = player.getStackInHand(hand)
-        val dye   = stack.item as? DyeItem
 
-        if (dye != null) {
+        if (player.isSneaking && stack.item is CebikesItems.MultibrushItem) {
             if (!world.isClient) {
-                dataTracker.set(COLOR_KEY, DYE_TO_RGB[dye.color] ?: DEFAULT_COLOR)
+                ServerPlayNetworking.send(
+                    player as ServerPlayerEntity,
+                    OpenBikeCustomizerPayload(this.id)
+                )
+            }
+            return ActionResult.SUCCESS
+        }
+
+        if (stack.item is ShearsItem && player.isSneaking) {
+            if (!world.isClient) {
+                applyDefaultColors()
+                stack.damage(1, player, LivingEntity.getSlotForHand(hand))
+            }
+            return ActionResult.SUCCESS
+        }
+
+        val dye = stack.item as? DyeItem
+        if (dye != null && player.isSneaking) {
+            if (!world.isClient) {
+                val rgb = DYE_TO_RGB[dye.color] ?: defaultColor
+                val colors = dataTracker.get(BONE_COLORS).copy()
+                colors.putInt("frame", rgb)
+                colors.putInt("headlight_mount", rgb)
+                dataTracker.set(BONE_COLORS, colors)
                 if (!player.abilities.creativeMode) stack.decrement(1)
             }
             return ActionResult.SUCCESS
         }
 
         if (!hasPassengers() && !player.isSneaking) {
-            if (!world.isClient) player.startRiding(this)
+            if (!world.isClient) {
+                player.startRiding(this)
+                playSound(SoundRegistry.getBellSound(getBellType()), 0.3f, 1.0f)
+            }
             return ActionResult.SUCCESS
         }
 
         return ActionResult.PASS
     }
 
-    // ── Damage / pick up ──────────────────────────────────────────────────
     override fun damage(source: DamageSource, amount: Float): Boolean {
         if (isRemoved || world.isClient) return false
         removeAllPassengers()
@@ -198,23 +322,53 @@ abstract class AbstractBikeEntity(type: EntityType<*>, world: World) : Entity(ty
 
     abstract fun createBikeItemStack(): ItemStack
 
-    // ── Passenger positioning ─────────────────────────────────────────────
-    override fun getPassengerRidingPos(passenger: Entity): Vec3d =
-        Vec3d(x, y + 1.60, z - 1)
+    override fun remove(reason: RemovalReason) {
+        if (!world.isClient) {
+            headlightAnchor?.remove(RemovalReason.DISCARDED)
+            headlightAnchor = null
+        }
+        super.remove(reason)
+    }
+
+    open fun passengerOffset(): Vec3d = Vec3d(0.0, 1.60, -0.55)
+
+    override fun getPassengerRidingPos(passenger: Entity): Vec3d {
+        val off = passengerOffset()
+        val yawRad = (yaw * (PI / 180.0)).toFloat()
+        val rotated = Vec3d(off.x, 0.0, off.z).rotateY(-yawRad)
+        return Vec3d(x + rotated.x, y + off.y, z + rotated.z)
+    }
 
     override fun canAddPassenger(passenger: Entity) = passengerList.isEmpty()
+
+    override fun updatePassengerForDismount(passenger: LivingEntity): Vec3d {
+        val yawRad  = yaw * (PI / 180.0)
+        val rightX  = cos(yawRad)
+        val rightZ  = sin(yawRad)
+        val offset  = (width / 2.0 + passenger.width / 2.0 + 0.1)
+
+        for (sign in doubleArrayOf(1.0, -1.0)) {
+            val tx = x + rightX * sign * offset
+            val tz = z + rightZ * sign * offset
+            for (dy in doubleArrayOf(0.0, -0.5, -1.0)) {
+                val landY = y + dy
+                val passengerBox = Box.of(Vec3d(tx, landY + passenger.height / 2.0, tz),
+                                         passenger.width.toDouble(), passenger.height.toDouble(), passenger.width.toDouble())
+                if (world.isSpaceEmpty(passenger, passengerBox)) {
+                    return Vec3d(tx, landY, tz)
+                }
+            }
+        }
+        return Vec3d(x + sin(yawRad) * offset, y, z - cos(yawRad) * offset)
+    }
 
     override fun getControllingPassenger(): LivingEntity? =
         firstPassenger as? LivingEntity
 
-    // Movement is server-authoritative (via our custom packets), so the client
-    // must never think it owns position updates — even though it has a controlling passenger.
     override fun isLogicalSideForUpdatingMovement(): Boolean = !world.isClient
 
-    // GeoEntityRenderer reads bodyYaw, but Entity (not LivingEntity) never updates it.
     override fun getBodyYaw(): Float = yaw
 
-    // ── Client-side interpolation (smooth networked movement) ─────────────
     override fun updateTrackedPositionAndAngles(
         x: Double, y: Double, z: Double,
         yaw: Float, pitch: Float,
@@ -227,19 +381,20 @@ abstract class AbstractBikeEntity(type: EntityType<*>, world: World) : Entity(ty
         lerpSteps = interpolationSteps + 2
     }
 
-    // ── Input (from server networking) ────────────────────────────────────
     fun updateInput(
         forward: Boolean, backward: Boolean,
         steerLeft: Boolean, steerRight: Boolean,
-        jump: Boolean, brake: Boolean
+        jumpStrength: Int, brake: Boolean
     ) {
         pressingForward    = forward
         pressingBackward   = backward
         pressingSteerLeft  = steerLeft
         pressingSteerRight = steerRight
-        pressingJump       = jump
         pressingBrake      = brake
+        if (jumpStrength > 0) onJumpInput(jumpStrength)
     }
+
+    open fun onJumpInput(strength: Int) {}
 
     override fun removePassenger(passenger: Entity) {
         super.removePassenger(passenger)
@@ -247,7 +402,6 @@ abstract class AbstractBikeEntity(type: EntityType<*>, world: World) : Entity(ty
         pressingBackward   = false
         pressingSteerLeft  = false
         pressingSteerRight = false
-        pressingJump       = false
         pressingBrake      = false
         steerDirection     = 0
         steerDuration      = 0
@@ -255,12 +409,11 @@ abstract class AbstractBikeEntity(type: EntityType<*>, world: World) : Entity(ty
         bikeYawInitialized = false
     }
 
-    // ── Tick ──────────────────────────────────────────────────────────────
     override fun tick() {
         super.tick()
+        tickHeadlightAnchor()
 
         if (world.isClient) {
-            // Smoothly interpolate toward the server-sent position/yaw
             if (lerpSteps > 0) {
                 val d = 1.0 / lerpSteps
                 setPosition(
@@ -275,16 +428,34 @@ abstract class AbstractBikeEntity(type: EntityType<*>, world: World) : Entity(ty
                 lerpSteps--
             }
 
-            val speed = velocity.horizontalLength()
-            wheelRotation = (wheelRotation + speed.toFloat() * (2f * PI.toFloat() / 2.5f)) % (2f * PI.toFloat())
+            val yawRad = yaw * (PI / 180.0).toFloat()
+            val fwd = Vec3d(-sin(yawRad.toDouble()), 0.0, cos(yawRad.toDouble()))
+            val signedSpeed = -velocity.dotProduct(fwd).toFloat()
+            wheelRotation = (wheelRotation + signedSpeed * (2f * PI.toFloat() / 2.5f)) % (2f * PI.toFloat())
+
+            val anchorId = dataTracker.get(HEADLIGHT_ANCHOR_ID)
+            if (anchorId != -1) {
+                val anchor = world.getEntityById(anchorId) as? HeadlightAnchorEntity
+                anchor?.setPosition(
+                    x + fwd.x * HeadlightAnchorEntity.FORWARD_OFFSET.z,
+                    y + HeadlightAnchorEntity.FORWARD_OFFSET.y,
+                    z + fwd.z * HeadlightAnchorEntity.FORWARD_OFFSET.z
+                )
+            }
             return
         }
 
         if (!isOnGround) velocity = velocity.add(0.0, -0.08, 0.0)
 
         val rider = firstPassenger as? PlayerEntity
+
+        var shouldSpawnBrakeParticles = false
+        var brakeYawRad = 0.0
+
         if (rider != null) {
             handleMovement(rider)
+            shouldSpawnBrakeParticles = pressingBrake && abs(currentSpeed) > 0.06
+            brakeYawRad = yaw * (PI / 180.0)
         } else {
             currentSpeed *= 0.85
             if (abs(currentSpeed) < 0.001) currentSpeed = 0.0
@@ -293,10 +464,13 @@ abstract class AbstractBikeEntity(type: EntityType<*>, world: World) : Entity(ty
 
         move(MovementType.SELF, velocity)
         velocityModified = true
+
+        if (shouldSpawnBrakeParticles && world is ServerWorld) {
+            spawnBrakeParticles(world as ServerWorld, brakeYawRad)
+        }
     }
 
     private fun handleMovement(rider: PlayerEntity) {
-        // On first tick after mounting, inherit rider's facing direction.
         if (!bikeYawInitialized) {
             yaw    = rider.yaw
             headYaw = yaw
@@ -304,14 +478,12 @@ abstract class AbstractBikeEntity(type: EntityType<*>, world: World) : Entity(ty
             bikeYawInitialized = true
         }
 
-        // ── Steering / drift ───────────────────────────────────────────────
         val rawSteer = when {
             pressingSteerLeft  && !pressingSteerRight -> -1
             pressingSteerRight && !pressingSteerLeft  ->  1
             else                                      ->  0
         }
 
-        // Track how long we've been steering in the same direction.
         if (rawSteer != 0 && rawSteer == steerDirection) {
             steerDuration++
         } else {
@@ -319,30 +491,25 @@ abstract class AbstractBikeEntity(type: EntityType<*>, world: World) : Entity(ty
             steerDuration  = if (rawSteer != 0) 1 else 0
         }
 
-        // Remember last steering direction for brake skid
         if (rawSteer != 0) lastNonZeroSteerDirection = rawSteer
 
-        // Drift bonus ramps up after DRIFT_THRESHOLD ticks.
         val driftProgress = if (steerDuration > DRIFT_THRESHOLD)
             min(1f, (steerDuration - DRIFT_THRESHOLD).toFloat() / DRIFT_RAMP_TICKS)
         else 0f
+        dataTracker.set(DRIFT_PROGRESS, driftProgress)
 
         if (rawSteer != 0 && abs(currentSpeed) > 0.01) {
             val turnRate = baseTurnRate + (maxDriftTurnRate - baseTurnRate) * driftProgress
-
-            // Reverse steering sense when going backward (like reversing a vehicle).
             val speedSign = if (currentSpeed >= 0) 1f else -1f
             yaw     += rawSteer * turnRate * speedSign
             headYaw  = yaw
             prevYaw  = yaw
 
-            // Light smoke from rear tyre during a drift
             if (driftProgress > 0.1f && world is ServerWorld) {
                 spawnDriftParticles(world as ServerWorld)
             }
         }
 
-        // ── Handlebar visual angle (synced to client) ──────────────────────
         val handlebarAngle = if (rawSteer != 0) {
             val driftBonus = if (abs(currentSpeed) > 0.01) 10f * driftProgress else 0f
             rawSteer * (15f + driftBonus)
@@ -351,24 +518,20 @@ abstract class AbstractBikeEntity(type: EntityType<*>, world: World) : Entity(ty
 
         val yawRad = yaw * (PI / 180.0)
 
-        // ── Braking ────────────────────────────────────────────────────────
         if (pressingBrake) {
-            val wasMoving = abs(currentSpeed) > 0.05
-            currentSpeed *= 0.45
+            val wasMoving = abs(currentSpeed) > 0.06
+            currentSpeed *= 0.86
             if (abs(currentSpeed) < 0.02) currentSpeed = 0.0
 
-            // Skid rotation — slide toward the side the bike was already steering
             if (wasMoving) {
                 val skidDir = if (steerDirection != 0) steerDirection else lastNonZeroSteerDirection
                 if (skidDir != 0) {
-                    val skidRate = 4.0f * (abs(currentSpeed) / maxForwardSpeed).toFloat().coerceAtMost(1f)
+                    val skidRate = 7.0f * (abs(currentSpeed) / maxForwardSpeed).toFloat().coerceAtMost(1f)
                     yaw     += skidDir * skidRate
                     headYaw  = yaw
                     prevYaw  = yaw
                 }
-
                 if (!wasBraking) playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, 0.4f, 0.8f + random.nextFloat() * 0.4f)
-                if (world is ServerWorld) spawnBrakeParticles(world as ServerWorld, yawRad)
             }
             wasBraking = true
         } else {
@@ -383,20 +546,74 @@ abstract class AbstractBikeEntity(type: EntityType<*>, world: World) : Entity(ty
             }
         }
 
-        if (isOnGround) currentSpeed *= 0.96
-
+        if (isOnGround) currentSpeed *= 0.97
         velocity = Vec3d(-sin(yawRad) * currentSpeed, velocity.y, cos(yawRad) * currentSpeed)
     }
 
-    // ── Particles ─────────────────────────────────────────────────────────
+    protected fun particleEffect(colorKey: String, fallback: ParticleEffect, scale: Float = 1.5f): ParticleEffect {
+        val boneColors = dataTracker.get(BONE_COLORS)
+        if (!boneColors.contains(colorKey)) return fallback
+        val rgb = boneColors.getInt(colorKey)
+        return DustParticleEffect(Vector3f(
+            ((rgb shr 16) and 0xFF) / 255f,
+            ((rgb shr 8)  and 0xFF) / 255f,
+            (rgb          and 0xFF) / 255f
+        ), scale)
+    }
+
+    /*
+    protected fun smokyParticleEffect(colorKey: String, fallback: ParticleEffect, scale: Float = 2.0f): ParticleEffect {
+        val boneColors = dataTracker.get(BONE_COLORS)
+        if (!boneColors.contains(colorKey)) return fallback
+        val rgb = boneColors.getInt(colorKey)
+        val from = Vector3f(
+            ((rgb shr 16) and 0xFF) / 255f,
+            ((rgb shr 8)  and 0xFF) / 255f,
+            (rgb          and 0xFF) / 255f
+        )
+        val to = Vector3f(0.55f, 0.55f, 0.55f)   // fades out to smoke grey
+        return DustColorTransitionParticleEffect(from, to, scale)
+    }*/
+
+    protected fun smokyParticleEffect(colorKey: String, fallback: ParticleEffect, scale: Float = 2.0f): ParticleEffect {
+        val boneColors = dataTracker.get(BONE_COLORS)
+        if (!boneColors.contains(colorKey)) return fallback
+        val rgb = boneColors.getInt(colorKey)
+        return BrakeSmokeParticleEffect(
+            fromR = ((rgb shr 16) and 0xFF) / 255f,
+            fromG = ((rgb shr 8) and 0xFF) / 255f,
+            fromB = (rgb and 0xFF) / 255f,
+            toR = 0.55f,
+            toG = 0.55f,
+            toB = 0.55f,
+            scale = scale
+        )
+    }
+
+    protected fun dustyParticleEffect(colorKey: String, fallback: ParticleEffect, scale: Float = 1.5f): ParticleEffect {
+        val boneColors = dataTracker.get(BONE_COLORS)
+        if (!boneColors.contains(colorKey)) return fallback
+        val rgb = boneColors.getInt(colorKey)
+        val from = Vector3f(
+            ((rgb shr 16) and 0xFF) / 255f,
+            ((rgb shr 8)  and 0xFF) / 255f,
+            (rgb          and 0xFF) / 255f
+        )
+        val to = Vector3f(0.55f, 0.55f, 0.55f)
+        return DustColorTransitionParticleEffect(from, to, scale)
+    }
+
     private fun spawnBrakeParticles(world: ServerWorld, yawRad: Double) {
+        val effect = smokyParticleEffect("particle_brake", ParticleTypes.CAMPFIRE_COSY_SMOKE, 1.0f)
         val fwd = Vec3d(-sin(yawRad), 0.0, cos(yawRad))
+        val compensationFactor = -(2.0 + (abs(currentSpeed) / maxForwardSpeed) * 2.0)
+        val velOffset = velocity.multiply(compensationFactor)
         for (sign in listOf(0.7, -0.7)) {
-            val wx = x + fwd.x * sign
-            val wz = z + fwd.z * sign
+            val wx = x + fwd.x * sign + velOffset.x
+            val wz = z + fwd.z * sign + velOffset.z
             repeat(2) {
                 world.spawnParticles(
-                    ParticleTypes.CAMPFIRE_COSY_SMOKE,
+                    effect,
                     wx + (random.nextDouble() - 0.5) * 0.3, y + 0.07,
                     wz + (random.nextDouble() - 0.5) * 0.3,
                     1, 0.05, 0.02, 0.05, 0.01
@@ -406,19 +623,20 @@ abstract class AbstractBikeEntity(type: EntityType<*>, world: World) : Entity(ty
     }
 
     private fun spawnDriftParticles(world: ServerWorld) {
+        val effect = dustyParticleEffect("particle_drift", ParticleTypes.SMOKE, 1.5f)
         val yawRad = yaw * (PI / 180.0)
         val fwd = Vec3d(-sin(yawRad), 0.0, cos(yawRad))
-        // Light smoke from the rear wheel
+        val velOffset = velocity.multiply(-2.0)
+
         world.spawnParticles(
-            ParticleTypes.SMOKE,
-            x - fwd.x * 0.6 + (random.nextDouble() - 0.5) * 0.5,
+            effect,
+            x - fwd.x * 0.6 + (random.nextDouble() - 0.5) * 0.5 + velOffset.x,
             y + 0.05,
-            z - fwd.z * 0.6 + (random.nextDouble() - 0.5) * 0.5,
+            z - fwd.z * 0.6 + (random.nextDouble() - 0.5) * 0.5 + velOffset.z,
             1, 0.02, 0.02, 0.02, 0.005
         )
     }
 
-    // ── Misc ──────────────────────────────────────────────────────────────
     override fun isPushable()   = false
     override fun isCollidable() = !isRemoved
 }

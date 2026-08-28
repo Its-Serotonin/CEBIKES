@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "cebikes_items",
+  "category": "misc",
+  "pattern": [
+    "   ",
+    "n n",
+    "non"
+  ],
+  "key": {
+    "n": {
+      "item": "minecraft:iron_nugget"
+    },
+    "o": {
+      "item": "minecraft:orange_dye"
+    }
+  },
+  "result": {
+    "id": "cebikes:core_bottom_cap",
+    "count": 1
+  }
+}

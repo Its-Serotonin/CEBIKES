@@ -6,12 +6,17 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "cebikes:bike_rack"
-        }
-      ],
-      "conditions": [
-        {
-          "condition": "minecraft:survives_explosion"
+          "name": "cebikes:bike_rack",
+          "conditions": [
+            {
+              "condition": "minecraft:block_state_property",
+              "block": "cebikes:bike_rack",
+              "properties": { "part": "main" }
+            },
+            {
+              "condition": "minecraft:survives_explosion"
+            }
+          ]
         }
       ]
     }

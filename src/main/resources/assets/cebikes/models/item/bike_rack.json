@@ -1,3 +1,38 @@
 {
-  "parent": "cebikes:block/bike_rack_floor"
+  "parent": "builtin/entity",
+  "textures": {
+    "particle": "cebikes:textures/block/bike_rack.png"
+  },
+  "display": {
+    "gui": {
+      "rotation": [-25, 30, 0],
+      "translation": [3, -2.5, 0],
+      "scale": [0.60, 0.60, 0.60]
+    },
+    "ground": {
+      "rotation": [0, 45, 0],
+      "translation": [0, 2, 0],
+      "scale": [0.5, 0.5, 0.5]
+    },
+    "fixed": {
+      "rotation": [0, 90, 0],
+      "translation": [0, 0, 0],
+      "scale": [0.5, 0.5, 0.5]
+    },
+    "thirdperson_righthand": {
+      "rotation": [45, 10, 15],
+      "translation": [0, 0, 0],
+      "scale": [0.5, 0.5, 0.5]
+    },
+    "firstperson_righthand": {
+      "rotation": [0, 90, 0],
+      "translation": [0, 0, 0],
+      "scale": [0.35, 0.35, 0.35]
+    },
+    "firstperson_lefthand": {
+      "rotation": [0, 90, 0],
+      "translation": [0, 0, 0],
+      "scale": [0.35, 0.35, 0.35]
+    }
+  }
 }

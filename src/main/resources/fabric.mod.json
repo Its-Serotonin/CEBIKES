@@ -2,11 +2,12 @@
   "schemaVersion": 1,
   "id": "cebikes",
   "version": "${version}",
-  "name": "CE Bikes",
+  "name": "CEBikes",
   "description": "",
   "authors": [],
   "contact": {},
   "license": "All-Rights-Reserved",
+  "accessWidener": "cebikes.accesswidener",
   "icon": "assets/cebikes/icon.png",
   "environment": "*",
   "entrypoints": {
@@ -18,6 +19,12 @@
     ],
     "main": [
       "com.serotonin.cebikes.Cebikes"
+    ],
+    "lambdynlights:initializer": [
+      "com.serotonin.cebikes.client.CebikesDynamicLightsInitializer"
+    ],
+    "modmenu": [
+      "com.serotonin.cebikes.client.compat.ModMenuIntegration"
     ]
   },
   "mixins": [
@@ -33,5 +40,11 @@
     "fabric-api": "*",
     "minecraft": "${minecraft_version}",
     "geckolib": "*"
+  },
+  "suggests": {
+    "lambdynamiclights": "*",
+    "modmenu": "*",
+    "cloth-config": "*",
+    "knowlogy": "*"
   }
 }

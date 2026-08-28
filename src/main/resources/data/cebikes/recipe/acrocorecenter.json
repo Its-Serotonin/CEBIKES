@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "cebikes_items",
+  "category": "misc",
+  "pattern": [
+    "trt",
+    "rbr",
+    "trt"
+  ],
+  "key": {
+    "b": {
+      "item": "minecraft:redstone_block"
+    },
+    "t": {
+      "item": "minecraft:redstone_torch"
+    },
+    "r": {
+      "item": "minecraft:redstone"
+    }
+  },
+  "result": {
+    "id": "cebikes:acro_core_center",
+    "count": 1
+  }
+}

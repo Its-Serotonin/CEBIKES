@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "cebikes_items",
+  "category": "misc",
+  "pattern": [
+    "sls",
+    "lbl",
+    "sls"
+  ],
+  "key": {
+    "s": {
+      "item": "minecraft:sugar"
+    },
+    "l": {
+      "item": "minecraft:lapis_lazuli"
+    },
+    "b": {
+      "item": "minecraft:lapis_block"
+    }
+  },
+  "result": {
+    "id": "cebikes:mach_core_center",
+    "count": 1
+  }
+}

@@ -1,0 +1,133 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"right_turn.acrobike": {
+			"loop": "hold_on_last_frame",
+			"animation_length": 1.8105,
+			"bones": {
+				"handle": {
+					"rotation": {
+						"0.0": [0, 0, 0],
+						"1.0526": {
+							"pre": [0, 30.5, 0],
+							"post": [0, 30.5, 0],
+							"lerp_mode": "catmullrom"
+						},
+						"1.4737": {
+							"post": [0, 30.5, 0],
+							"lerp_mode": "catmullrom"
+						},
+						"1.6421": {
+							"post": [0, 30.5, 0],
+							"lerp_mode": "catmullrom"
+						},
+						"1.6842": [0, 30.5, 0],
+						"1.8105": [0, 30.5, 0]
+					}
+				}
+			}
+		},
+		"left_turn.acrobike": {
+			"loop": "hold_on_last_frame",
+			"animation_length": 1.8105,
+			"bones": {
+				"handle": {
+					"rotation": {
+						"0.0": [0, 0, 0],
+						"1.0526": {
+							"pre": [0, -30.5, 0],
+							"post": [0, -30.5, 0],
+							"lerp_mode": "catmullrom"
+						},
+						"1.4737": {
+							"post": [0, -30.5, 0],
+							"lerp_mode": "catmullrom"
+						},
+						"1.6421": {
+							"post": [0, -30.5, 0],
+							"lerp_mode": "catmullrom"
+						},
+						"1.6842": [0, -30.5, 0],
+						"1.8105": [0, -30.5, 0]
+					}
+				}
+			}
+		},
+		"wheels_forwards.acrobike": {
+			"loop": true,
+			"animation_length": 0.832,
+			"bones": {
+				"back_wheel": {
+					"rotation": {
+						"0.0": [0, 0, 0],
+						"0.832": [360, 0, 0]
+					}
+				},
+				"front_wheel": {
+					"rotation": {
+						"0.0": [0, 0, 0],
+						"0.832": [360, 0, 0]
+					}
+				}
+			}
+		},
+		"wheels_backwards.acrobike": {
+			"loop": true,
+			"animation_length": 1.04,
+			"bones": {
+				"back_wheel": {
+					"rotation": {
+						"0.0": [0, 0, 0],
+						"1.04": [-360, 0, 0]
+					}
+				},
+				"front_wheel": {
+					"rotation": {
+						"0.0": [0, 0, 0],
+						"1.04": [-360, 0, 0]
+					}
+				}
+			}
+		},
+		"pedal_forwards.acrobike": {
+			"loop": true,
+			"animation_length": 0.5818,
+			"bones": {
+				"left_pedal": {
+					"rotation": {
+						"0.0": [-180, 0, 0],
+						"0.2909": [0, 0, 0],
+						"0.5818": [180, 0, 0]
+					}
+				},
+				"right_pedal": {
+					"rotation": {
+						"0.0": [0, 0, 0],
+						"0.2909": [180, 0, 0],
+						"0.5818": [360, 0, 0]
+					}
+				}
+			}
+		},
+		"pedal_backwards.acrobike": {
+			"loop": true,
+			"animation_length": 0.5818,
+			"bones": {
+				"left_pedal": {
+					"rotation": {
+						"0.0": [180, 0, 0],
+						"0.2909": [0, 0, 0],
+						"0.5818": [-180, 0, 0]
+					}
+				},
+				"right_pedal": {
+					"rotation": {
+						"0.0": [0, 0, 0],
+						"0.2909": [-180, 0, 0],
+						"0.5818": [-360, 0, 0]
+					}
+				}
+			}
+		}
+	}
+}

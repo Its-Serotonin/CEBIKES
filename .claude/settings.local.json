@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(./gradlew compileKotlin)"
+      "Bash(./gradlew compileKotlin)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   }
 }

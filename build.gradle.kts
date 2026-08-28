@@ -6,7 +6,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "2.2.20"
-    id("fabric-loom") version "1.11-SNAPSHOT"
+    id("fabric-loom") version "1.14-SNAPSHOT"
     id("maven-publish")
 }
 
@@ -28,6 +28,8 @@ java {
 }
 
 loom {
+    accessWidenerPath.set(file("src/main/resources/cebikes.accesswidener"))
+
     splitEnvironmentSourceSets()
 
     mods {
@@ -49,6 +51,16 @@ repositories {
         name = "GeckoLib"
         url = uri("https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/")
     }
+    maven {
+        name = "Gegy"
+        url = uri("https://maven.gegy.dev")
+    }
+    maven {
+
+        url = uri("https://maven.terraformersmc.com/releases") }
+    maven {
+
+        url = uri("https://maven.shedaniel.me/") }
 }
 
 dependencies {
@@ -60,6 +72,9 @@ dependencies {
     modImplementation("net.fabricmc.fabric-api:fabric-api:${project.property("fabric_version")}")
     // GeckoLib — Bedrock geo.json model support. Check https://modrinth.com/mod/geckolib for latest version.
     modImplementation("software.bernie.geckolib:geckolib-fabric-1.21.1:4.8.4")
+    modCompileOnly("dev.lambdaurora.lambdynamiclights:lambdynamiclights-api:4.8.7+1.21.1")
+    modCompileOnly ("com.terraformersmc:modmenu:11.0.0")
+    modCompileOnly ("me.shedaniel.cloth:cloth-config-fabric:15.0.140")
 }
 
 tasks.processResources {
@@ -68,12 +83,16 @@ tasks.processResources {
     inputs.property("loader_version", project.property("loader_version"))
     filteringCharset = "UTF-8"
 
+    val minecraft_version: String by project
+    val loader_version: String by project
+    val kotlin_loader_version: String by project
+
     filesMatching("fabric.mod.json") {
         expand(
             "version" to project.version,
-            "minecraft_version" to project.property("minecraft_version"),
-            "loader_version" to project.property("loader_version"),
-            "kotlin_loader_version" to project.property("kotlin_loader_version")
+            "minecraft_version" to minecraft_version,
+            "loader_version" to loader_version,
+            "kotlin_loader_version" to kotlin_loader_version
         )
     }
 }

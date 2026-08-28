@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "cebikes_items",
+  "category": "misc",
+  "pattern": [
+    " mm",
+    " sm",
+    "s  "
+  ],
+  "key": {
+    "m": {
+      "item": "cebikes:multidye"
+    },
+    "s": {
+      "item": "minecraft:stick"
+    }
+  },
+  "result": {
+    "id": "cebikes:multibrush",
+    "count": 1
+  }
+}

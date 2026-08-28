@@ -12,11 +12,22 @@ import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket
 import net.minecraft.registry.RegistryWrapper
 import net.minecraft.server.world.ServerWorld
 import net.minecraft.util.math.BlockPos
+import software.bernie.geckolib.animatable.GeoBlockEntity
+import software.bernie.geckolib.animation.AnimatableManager
+import software.bernie.geckolib.util.GeckoLibUtil
 
 class BikeRackBlockEntity(
     pos: BlockPos,
     state: BlockState
-) : BlockEntity(CebikesBlockEntities.BIKE_RACK, pos, state) {
+) : BlockEntity(CebikesBlockEntities.BIKE_RACK, pos, state), GeoBlockEntity {
+
+    private val geoCache = GeckoLibUtil.createInstanceCache(this)
+
+    override fun getAnimatableInstanceCache() = geoCache
+
+    override fun registerControllers(controllers: AnimatableManager.ControllerRegistrar) {
+        // no animations needed
+    }
 
     private var storedBike: ItemStack = ItemStack.EMPTY
 
@@ -36,19 +47,24 @@ class BikeRackBlockEntity(
         return result
     }
 
-    // markDirty pushes the update packet immediately to nearby clients in addition
-    // to the normal chunk-save flagging.
+
     override fun markDirty() {
         super.markDirty()
-        world?.updateListeners(pos, cachedState, cachedState, Block.NOTIFY_LISTENERS)
+        val world = world ?: return
+        if (world.isClient) return
+        val serverWorld = world as? ServerWorld ?: return
+        world.updateListeners(pos, cachedState, cachedState, Block.NOTIFY_ALL)
+        val packet = toUpdatePacket()
+        serverWorld.players.forEach { player ->
+            if (player.squaredDistanceTo(pos.x.toDouble(), pos.y.toDouble(), pos.z.toDouble()) < 64 * 64) {
+                player.networkHandler.sendPacket(packet)
+            }
+        }
     }
 
-    // ── Persistence ───────────────────────────────────────────────────────
     override fun writeNbt(nbt: NbtCompound, registryLookup: RegistryWrapper.WrapperLookup) {
         super.writeNbt(nbt, registryLookup)
-        if (!storedBike.isEmpty) {
-            nbt.put("StoredBike", storedBike.encodeAllowEmpty(registryLookup))
-        }
+        nbt.put("StoredBike", storedBike.encodeAllowEmpty(registryLookup))
     }
 
     override fun readNbt(nbt: NbtCompound, registryLookup: RegistryWrapper.WrapperLookup) {
@@ -58,7 +74,6 @@ class BikeRackBlockEntity(
         else ItemStack.EMPTY
     }
 
-    // ── Client sync packets ───────────────────────────────────────────────
     override fun toUpdatePacket(): Packet<ClientPlayPacketListener> =
         BlockEntityUpdateS2CPacket.create(this)
 

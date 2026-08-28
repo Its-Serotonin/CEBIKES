@@ -1,94 +1,97 @@
 package com.serotonin.cebikes.client.block
 
+
 import com.serotonin.cebikes.block.BikeRackBlock
 import com.serotonin.cebikes.block.BikeRackBlockEntity
-import com.serotonin.cebikes.client.entity.model.BikeEntityModel
-import com.serotonin.cebikes.entity.AbstractBikeEntity
-import com.serotonin.cebikes.registry.CebikesItems
-import net.minecraft.client.render.OverlayTexture
-import net.minecraft.client.render.RenderLayer
+import com.serotonin.cebikes.block.BikeRackPart
+import com.serotonin.cebikes.config.CebikesConfig
+import com.serotonin.cebikes.item.BikeItem
 import net.minecraft.client.render.VertexConsumerProvider
-import net.minecraft.client.render.block.entity.BlockEntityRenderer
-import net.minecraft.client.render.block.entity.BlockEntityRendererFactory
+import net.minecraft.client.render.model.json.ModelTransformationMode
 import net.minecraft.client.util.math.MatrixStack
-import net.minecraft.component.DataComponentTypes
-import net.minecraft.component.type.NbtComponent
-import net.minecraft.util.Identifier
 import net.minecraft.util.math.Direction
 import net.minecraft.util.math.RotationAxis
+import software.bernie.geckolib.animatable.client.GeoRenderProvider
+import software.bernie.geckolib.renderer.GeoBlockRenderer
+import software.bernie.geckolib.renderer.GeoItemRenderer
 
 class BikeRackBlockEntityRenderer(
-    ctx: BlockEntityRendererFactory.Context
-) : BlockEntityRenderer<BikeRackBlockEntity> {
-
-    private val bikeModel = BikeEntityModel<AbstractBikeEntity>(
-        BikeEntityModel.getTexturedModelData().createModel()
-    )
-
-    // Use the mach bike texture as a fallback; stored item determines which
-    private val machTexture = Identifier.of("cebikes", "textures/entity/machbike.png")
-    private val acroTexture = Identifier.of("cebikes", "textures/entity/acrobike.png")
+) : GeoBlockRenderer<BikeRackBlockEntity>(BikeRackGeoModel()) {
 
     override fun render(
         entity: BikeRackBlockEntity,
-        tickDelta: Float,
+        partialTick: Float,
         matrices: MatrixStack,
         vertexConsumers: VertexConsumerProvider,
-        light: Int,
-        overlay: Int
+        packedLight: Int,
+        packedOverlay: Int
     ) {
-        val bikeStack = entity.getStoredBike()
-        if (bikeStack.isEmpty) return
+        // Only render from the main block, not the extension
+        if (entity.cachedState.get(BikeRackBlock.PART) != BikeRackPart.MAIN) return
 
+        val onWall = entity.cachedState.get(BikeRackBlock.WALL_MOUNTED)
         val state = entity.cachedState
         val facing = state.get(BikeRackBlock.FACING)
-        val wallMounted = state.get(BikeRackBlock.WALL_MOUNTED)
 
-        // Pick texture based on which bike item is stored
-        val texture = if (bikeStack.isOf(CebikesItems.ACRO_BIKE)) acroTexture else machTexture
 
-        // Read stored colour from the item
-        val nbt = bikeStack.getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT).copyNbt()
-        val color = if (nbt.contains("BikeColor")) nbt.getInt("BikeColor") else 0xFFFFFF
-        val argb = (0xFF shl 24) or color
 
-        matrices.push()
-
-        // Position the bike on the rack
-        matrices.translate(0.5, 0.0, 0.5)
-
-        if (wallMounted) {
-            // Bike is mounted on wall — raised and flush against the wall
-            matrices.translate(0.0, 0.6, 0.0)
-            val wallOffset = 0.35
-            when (facing) {
-                Direction.NORTH -> matrices.translate(0.0, 0.0, wallOffset)
-                Direction.SOUTH -> matrices.translate(0.0, 0.0, -wallOffset)
-                Direction.WEST  -> matrices.translate(wallOffset, 0.0, 0.0)
-                Direction.EAST  -> matrices.translate(-wallOffset, 0.0, 0.0)
-                else -> {}
+        if (onWall) {
+            if (CebikesConfig.visibleBikeRack) {
+                super.render(entity, partialTick, matrices, vertexConsumers, packedLight, packedOverlay)
             }
+        } else {
+            super.render(entity, partialTick, matrices, vertexConsumers, packedLight, packedOverlay)
         }
 
-        // Rotate bike to face the rack direction
+
+        val bikeStack = entity.getStoredBike()
+        if (bikeStack.isEmpty) return
+        val item = bikeStack.item as? BikeItem ?: return
+        val renderer = GeoRenderProvider.of(item).geoItemRenderer ?: return
+
+        matrices.push()
+        matrices.translate(0.5, 0.0, 0.5)
+
+
+        //bikes rotation on the ground
         val yawDeg = when (facing) {
-            Direction.SOUTH -> 0f
-            Direction.WEST  -> 90f
-            Direction.NORTH -> 180f
-            Direction.EAST  -> 270f
+            Direction.NORTH -> 270f
+            Direction.SOUTH -> 90f
+            Direction.WEST  -> 0f
+            Direction.EAST  -> 180f
             else -> 0f
         }
         matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(yawDeg))
+        if (onWall) {
+            //bikes rendering on the wall
+            matrices.translate(-0.40, -0.5, -0.5)
+            matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(0f))
+        } else {
+            //bikes pos on ground after rotation
+            matrices.translate(-1.05, -0.5, 0.20)
+            matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-22.5f))
+        }
 
-        // Lift model so wheels sit on the surface
-        matrices.translate(0.0, 5.0 / 16.0, 0.0)
+        val scale = 1.0f
+        matrices.scale(scale, scale, scale)
 
-        // Scale: 1 model unit → 1/16 block; flip Y
-        val s = 1f / 16f
-        matrices.scale(s, -s, s)
+        val geoModel = (renderer as? GeoItemRenderer<*>)?.geoModel
+        geoModel?.getBone("back_wheel")?.ifPresent  { it.setRotX(0f) }
+        geoModel?.getBone("front_wheel")?.ifPresent { it.setRotX(0f); it.setRotY(0f) }
+        geoModel?.getBone("left_pedal")?.ifPresent  { it.setRotX(0f) }
+        geoModel?.getBone("right_pedal")?.ifPresent { it.setRotX(0f) }
+        geoModel?.getBone("handle")?.ifPresent      { it.setRotY(0f) }
+        geoModel?.getBone("machbike")?.ifPresent    { it.setRotZ(0f) }
+        geoModel?.getBone("acrobike")?.ifPresent    { it.setRotZ(0f) }
 
-        val vertexConsumer = vertexConsumers.getBuffer(RenderLayer.getEntityCutoutNoCull(texture))
-        bikeModel.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV, argb)
+        renderer.render(
+            bikeStack,
+            ModelTransformationMode.FIXED,
+            matrices,
+            vertexConsumers,
+            packedLight,
+            packedOverlay
+        )
 
         matrices.pop()
     }

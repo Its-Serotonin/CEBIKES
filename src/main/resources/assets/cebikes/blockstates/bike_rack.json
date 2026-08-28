@@ -1,12 +1,16 @@
 {
   "variants": {
-    "facing=north,wall_mounted=false": { "model": "cebikes:block/bike_rack_floor", "y": 180 },
-    "facing=south,wall_mounted=false": { "model": "cebikes:block/bike_rack_floor" },
-    "facing=west,wall_mounted=false":  { "model": "cebikes:block/bike_rack_floor", "y": 270 },
-    "facing=east,wall_mounted=false":  { "model": "cebikes:block/bike_rack_floor", "y": 90 },
-    "facing=north,wall_mounted=true":  { "model": "cebikes:block/bike_rack_wall" },
-    "facing=south,wall_mounted=true":  { "model": "cebikes:block/bike_rack_wall", "y": 180 },
-    "facing=west,wall_mounted=true":   { "model": "cebikes:block/bike_rack_wall", "y": 90 },
-    "facing=east,wall_mounted=true":   { "model": "cebikes:block/bike_rack_wall", "y": 270 }
+    "facing=north,part=main,wall_mounted=false": { "model": "cebikes:block/bike_rack" },
+    "facing=south,part=main,wall_mounted=false": { "model": "cebikes:block/bike_rack" },
+    "facing=east,part=main,wall_mounted=false": { "model": "cebikes:block/bike_rack" },
+    "facing=west,part=main,wall_mounted=false": { "model": "cebikes:block/bike_rack" },
+    "facing=north,part=extension,wall_mounted=false": { "model": "cebikes:block/bike_rack" },
+    "facing=south,part=extension,wall_mounted=false": { "model": "cebikes:block/bike_rack" },
+    "facing=east,part=extension,wall_mounted=false": { "model": "cebikes:block/bike_rack" },
+    "facing=west,part=extension,wall_mounted=false": { "model": "cebikes:block/bike_rack" },
+    "facing=north,part=main,wall_mounted=true": { "model": "cebikes:block/bike_rack_wall" },
+    "facing=south,part=main,wall_mounted=true": { "model": "cebikes:block/bike_rack_wall" },
+    "facing=east,part=main,wall_mounted=true": { "model": "cebikes:block/bike_rack_wall" },
+    "facing=west,part=main,wall_mounted=true": { "model": "cebikes:block/bike_rack_wall" }
   }
 }

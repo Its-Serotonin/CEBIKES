@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "cebikes_items",
+  "category": "misc",
+  "pattern": [
+    "iii",
+    "ili"
+  ],
+  "key": {
+    "i": {
+      "item": "minecraft:iron_ingot"
+    },
+    "l": {
+      "item": "minecraft:lantern"
+    }
+  },
+  "result": {
+    "id": "cebikes:bike_handles",
+    "count": 1
+  }
+}

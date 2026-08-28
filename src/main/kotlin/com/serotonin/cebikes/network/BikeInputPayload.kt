@@ -10,7 +10,7 @@ data class BikeInputPayload(
     val backward:     Boolean,
     val steerLeft:    Boolean,
     val steerRight:   Boolean,
-    val jump:         Boolean,
+    val jumpStrength: Int,
     val brake:        Boolean
 ) : CustomPayload {
 
@@ -23,17 +23,17 @@ data class BikeInputPayload(
                 buf.writeBoolean(value.backward)
                 buf.writeBoolean(value.steerLeft)
                 buf.writeBoolean(value.steerRight)
-                buf.writeBoolean(value.jump)
+                buf.writeInt(value.jumpStrength)
                 buf.writeBoolean(value.brake)
             },
             { buf ->
                 BikeInputPayload(
-                    forward    = buf.readBoolean(),
-                    backward   = buf.readBoolean(),
-                    steerLeft  = buf.readBoolean(),
-                    steerRight = buf.readBoolean(),
-                    jump       = buf.readBoolean(),
-                    brake      = buf.readBoolean()
+                    forward      = buf.readBoolean(),
+                    backward     = buf.readBoolean(),
+                    steerLeft    = buf.readBoolean(),
+                    steerRight   = buf.readBoolean(),
+                    jumpStrength = buf.readInt(),
+                    brake        = buf.readBoolean()
                 )
             }
         )

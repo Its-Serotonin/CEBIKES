@@ -1,6 +1,38 @@
 {
-  "parent": "item/generated",
+  "parent": "builtin/entity",
   "textures": {
-    "layer0": "cebikes:item/mach_bike"
+    "particle": "cebikes:textures/entity/machbike.png"
+  },
+  "display": {
+    "gui": {
+      "rotation": [-25, 30, 0],
+      "translation": [0, -5.5, 0],
+      "scale": [0.48, 0.48, 0.48]
+    },
+    "ground": {
+      "rotation": [0, 45, 0],
+      "translation": [0, 2, 0],
+      "scale": [1.0, 1.0, 1.0]
+    },
+    "fixed": {
+      "rotation": [0, 90, 0],
+      "translation": [0, 0, 0],
+      "scale": [0.5, 0.5, 0.5]
+    },
+    "thirdperson_righthand": {
+      "rotation": [45, 10, 15],
+      "translation": [0, -5, 0],
+      "scale": [0.5, 0.5, 0.5]
+    },
+    "firstperson_righthand": {
+      "rotation": [0, 90, 0],
+      "translation": [0, -2, 0],
+      "scale": [0.35, 0.35, 0.35]
+    },
+    "firstperson_lefthand": {
+      "rotation": [0, 90, 0],
+      "translation": [0, -2, 0],
+      "scale": [0.35, 0.35, 0.35]
+    }
   }
 }

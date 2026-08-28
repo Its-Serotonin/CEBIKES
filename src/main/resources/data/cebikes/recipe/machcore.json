@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "cebikes_items",
+  "category": "misc",
+  "pattern": [
+    "  t",
+    " c ",
+    "b  "
+  ],
+  "key": {
+    "t": {
+      "item": "cebikes:core_top_cap"
+    },
+    "b": {
+      "item": "cebikes:core_bottom_cap"
+    },
+    "c": {
+      "item": "cebikes:mach_core_center"
+    }
+  },
+  "result": {
+    "id": "cebikes:mach_core",
+    "count": 1
+  }
+}

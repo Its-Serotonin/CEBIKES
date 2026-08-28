@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "cebikes_items",
+  "category": "misc",
+  "pattern": [
+    " r ",
+    "rbr",
+    " r "
+  ],
+  "key": {
+    "r": {
+      "item": "cebikes:rubber_ingot"
+    },
+    "b": {
+      "item": "minecraft:iron_bars"
+    }
+  },
+  "result": {
+    "id": "cebikes:bike_tires",
+    "count": 2
+  }
+}

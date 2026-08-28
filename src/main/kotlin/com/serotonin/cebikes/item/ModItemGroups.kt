@@ -13,7 +13,7 @@ object ModItemGroups {
     val CEBIKES_ITEM_GROUP: ItemGroup? = Registry.register(
         Registries.ITEM_GROUP,
         Identifier.of("cebikes", "cebikes_items"),
-        FabricItemGroup.builder().icon { ItemStack(CebikesItems.MACH_CORE) }
+        FabricItemGroup.builder().icon { ItemStack(CebikesItems.MACH_BIKE) }
             .displayName(Text.translatable("itemgroup.cebikes.cebikes_items"))
             .entries { _: ItemGroup.DisplayContext?, entries: ItemGroup.Entries? ->
                 entries?.add(CebikesItems.MACH_BIKE)
@@ -30,6 +30,8 @@ object ModItemGroups {
                 entries?.add(CebikesItems.BIKE_GEARS)
                 entries?.add(CebikesItems.BIKE_HANDLES)
                 entries?.add(CebikesItems.BIKE_TIRES)
+                entries?.add(CebikesItems.MULTIDYE)
+                entries?.add(CebikesItems.MULTIBRUSH)
             }.build()
     )
 

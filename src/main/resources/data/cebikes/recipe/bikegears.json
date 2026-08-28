@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "cebikes_items",
+  "category": "misc",
+  "pattern": [
+    " c ",
+    "ctc",
+    " c "
+  ],
+  "key": {
+    "c": {
+      "item": "minecraft:copper_ingot"
+    },
+    "t": {
+      "item": "minecraft:tripwire_hook"
+    }
+  },
+  "result": {
+    "id": "cebikes:bike_gears",
+    "count": 1
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "bikes.bike_forwards": {
+    "sounds": [{ "name": "cebikes:bikes/bike_forwards", "stream": true }]
+  },
+  "bikes.bike_reverse": {
+    "sounds": [{ "name": "cebikes:bikes/bike_reverse", "stream": true }]
+  },
+  "bikes.bike_jump": {
+    "sounds": [{ "name": "cebikes:bikes/bike_jump", "stream": false }]
+  },
+  "bikes.headlight_on": {
+    "sounds": [{ "name": "cebikes:bikes/headlight_on", "stream": false }]
+  },
+  "bikes.headlight_off": {
+    "sounds": [{ "name": "cebikes:bikes/headlight_off", "stream": false }]
+  },
+  "bikes.bell_standard": {
+    "sounds": [{ "name": "cebikes:bikes/bell_standard", "stream": false }]
+  },
+  "bikes.bell_stab": {
+    "sounds": [{ "name": "cebikes:bikes/bell_stab", "stream": false }]
+  },
+  "bikes.bell_standard2": {
+    "sounds": [{ "name": "cebikes:bikes/bell_standard2", "stream": false }]
+  },
+  "bikes.bell_rotom": {
+    "sounds": [{ "name": "cebikes:bikes/bell_rotom", "stream": false }]
+  },
+  "bikes.bell_pika": {
+    "sounds": [{ "name": "cebikes:bikes/bell_pika", "stream": false }]
+  },
+  "bikes.button_press": {
+    "sounds": [{ "name": "cebikes:bikes/button_press", "stream": false }]
+  },
+  "bikes.button26": {
+    "sounds": [{ "name": "cebikes:bikes/button26", "stream": false }]
+  },
+  "bikes.button4768": {
+    "sounds": [{ "name": "cebikes:bikes/button4768", "stream": false }]
+  },
+  "bikes.gui_open": {
+    "sounds": [{ "name": "cebikes:bikes/screenopen", "stream": false }]
+  }
+}

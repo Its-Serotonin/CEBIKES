@@ -1,10 +1,42 @@
 {
+  "itemgroup.cebikes.cebikes_items": "CEBikes",
+
   "item.cebikes.mach_bike": "Mach Bike",
   "item.cebikes.acro_bike": "Acro Bike",
+  "item.cebikes.mach_core": "Mach Core",
+  "item.cebikes.acro_core": "Acro Core",
+  "item.cebikes.acro_core_center": "Acro Core Centerpiece",
+  "item.cebikes.mach_core_center": "Mach Core Centerpiece",
+  "item.cebikes.core_top_cap": "Core Top Cap",
+  "item.cebikes.core_bottom_cap": "Core Bottom Cap",
+  "item.cebikes.rubber_ingot": "Rubber Ingot",
+  "item.cebikes.bike_frame": "Bike Frame",
+  "item.cebikes.bike_gears": "Bike Gears",
+  "item.cebikes.bike_handles": "Bike Handles",
+  "item.cebikes.bike_tires": "Bike Tires",
+  "item.cebikes.multidye": "Multidye",
+  "item.cebikes.multibrush": "Multibrush",
   "entity.cebikes.mach_bike": "Mach Bike",
   "entity.cebikes.acro_bike": "Acro Bike",
-  "key.cebikes.brake": "Brake (Bike)",
-  "key.cebikes.headlight": "Headlight (Bike)",
+  "key.cebikes.brake": "E-Brake / Powerslide",
+  "key.cebikes.headlight": "Headlight",
+  "key.cebikes.bell": "Bell",
   "block.cebikes.bike_rack": "Bike Rack",
-  "category.cebikes": "CE Bikes"
+  "category.cebikes": "CEBikes",
+  "tooltip.cebikes.cebike": "Has drifting capabilities!",
+  "tooltip.cebikes.multidye": "The ultimate dye",
+  "tooltip.cebikes.multibrush": "The ultimate bike customizer!",
+  "gui.cebikes.customizer.title": "Bike Customizer",
+
+  "advancement.cebikes.root.title": "CEBikes",
+  "advancement.cebikes.root.description": "Let's get cyclin'!",
+
+  "advancement.cebikes.mach_bike.title": "Mach Speed",
+  "advancement.cebikes.mach_bike.description": "Craft the Mach Bike... It's fast, maybe as fast as a Boltund",
+
+  "advancement.cebikes.acro_bike.title": "Trampoline",
+  "advancement.cebikes.acro_bike.description": "Craft the Acro Bike so you can jump to the sky!",
+
+  "advancement.cebikes.multibrush.title": "Ultimate Customization",
+  "advancement.cebikes.multibrush.description": "Craft the Multibrush: the holy grail of bike customizability"
 }
